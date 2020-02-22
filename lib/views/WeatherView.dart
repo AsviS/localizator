@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
+import '../libraries/secrets.dart' as secrets;
 import '../libraries/globals.dart' as globals;
 import 'package:localizer/Widgets/Weather.dart';
-import 'package:localizer/Widgets/WeatherItem.dart';
+import 'package:localizer/Widgets/WeatherForecastItem.dart';
 
 import 'package:localizer/models/WeatherData.dart';
 import 'package:localizer/models/ForecastData.dart';
@@ -51,7 +51,7 @@ class _WeatherState extends State<WeatherView> {
     if (globals.weatherResponse==null|| isWeatherUpToDate==false) {
 
       weatherResponse = await http.get(
-          "https://api.openweathermap.org/data/2.5/weather?APPID=e438793d26f931f5c2d283df4f520108&lat=${lat
+          "https://api.openweathermap.org/data/2.5/weather?APPID=${secrets.APP_ID}&lat=${lat
               .toString( )}&lon=${long.toString( )}" );
       globals.weatherResponse=weatherResponse;
       ///last Update Time;
@@ -59,8 +59,8 @@ class _WeatherState extends State<WeatherView> {
     }
     if(globals.forecastResponse==null||isWeatherUpToDate==false) {
        forecastResponse = await http.get(
-          'https://api.openweathermap.org/data/2.5/forecast?units=metric&APPID=e438793d26f931f5c2d283df4f520108&lat=${lat
-              .toString( )}&lon=${long.toString( )}&units=metric&lang=eng' );
+          'https://api.openweathermap.org/data/2.5/forecast?APPID=${secrets.APP_ID}&lat=${lat
+              .toString( )}&lon=${long.toString( )}&lang=eng' );
        globals.forecastResponse=forecastResponse;
 
     }
@@ -113,9 +113,11 @@ class _WeatherState extends State<WeatherView> {
     return Scaffold(
       body:ListView(children: <Widget>[
         Column(
+
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Center(
+
               child: weatherData != null
                   ? Weather(weather: weatherData)
                   : Container(),
@@ -175,4 +177,5 @@ class _WeatherState extends State<WeatherView> {
       });
     }
   }
+
 }

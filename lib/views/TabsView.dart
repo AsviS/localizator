@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localizer/views/SettingsView.dart';
 import 'MyLocationView.dart';
 import 'SearchView.dart';
 import 'DrawerView.dart';
@@ -16,6 +17,7 @@ class _TabsState extends State<TabsView> {
     super.initState();
   }
 
+
   @override
   Widget build(BuildContext context) {
     ErrorWidget.builder = getErrorWidget;
@@ -30,25 +32,37 @@ class _TabsState extends State<TabsView> {
           appBar: AppBar(
             centerTitle: true,
             title: Text('Locativity'),
+            actions: <Widget>[
+              IconButton(
+                  icon: Icon(
+                    Icons.tune,
+                  ),
+                  onPressed: (){
+                     Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => SettingsView()));
+                  }),
+            ],
             bottom: TabBar(tabs: <Widget>[
               //Tab(icon: Icon(Icons.home), text: 'Home'),
               new Container(
-                height: 70,
+                height: 65,
                 child: Tab(icon: Icon(Icons.my_location), text: 'Location'),
               ),
               new Container(
-                height: 70,
+                height: 65,
                 child: Tab(icon: Icon(Icons.cloud), text: 'Weather'),
               ),
               new Container(
-                height: 70,
+                height: 65,
                 child: Tab(icon: Icon(Icons.search), text: 'Search'),
               ),
             ]),
           ),
           drawer: DrawerView(),
           body: TabBarView(
-            //disable tabs scroll
+            /// disable tabs scroll
             physics: NeverScrollableScrollPhysics(),
             children: <Widget>[
               // HomeView(),

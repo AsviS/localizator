@@ -8,6 +8,7 @@ import 'package:localizer/libraries/globals.dart';
 import 'package:localizer/models/WeatherData.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../libraries/globals.dart' as globals;
+import '../libraries/secrets.dart' as secrets;
 import "dart:math" as math;
 import 'dart:convert';
 import 'package:app_settings/app_settings.dart';
@@ -82,12 +83,11 @@ class MyLocationViewState extends State<MyLocationView>
   ///=========================================[initState]=============================================
 
   initState() {
-    super.initState();
     if (long == null || lat == null) {
       ///checks GPS then call localize
       _checkGPS();
     } else {
-      /// GPS is Okey just localize
+      /// GPS is Okay just localize
       localize();
     }
 
@@ -95,6 +95,7 @@ class MyLocationViewState extends State<MyLocationView>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    super.initState();
   }
 
   @override
@@ -105,8 +106,12 @@ class MyLocationViewState extends State<MyLocationView>
 
   _moveCamera() {
     isMoving = true;
-    mapController.move(LatLng(lat, long), _inZoom);
-    icons[0] = Icons.gps_fixed;
+    if (lat != null && long != null) {
+      mapController.onReady.then((result) {
+        mapController.move(LatLng(lat, long), _inZoom);
+        icons[0] = Icons.gps_fixed;
+      });
+    }
   }
 
   String positionName() {
@@ -266,7 +271,7 @@ class MyLocationViewState extends State<MyLocationView>
                     "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
                 additionalOptions: {
                   'accessToken':
-                      'pk.eyJ1IjoiaG91c3NlbXRuIiwiYSI6ImNqc3hvOG82NTA0Ym00YnI1dW40M2hjMjAifQ.VlQl6uacopBKX__qg6cf3w',
+                  secrets.accessToken,
                   'id': 'mapbox.streets',
                 },
               ),
@@ -335,7 +340,7 @@ class MyLocationViewState extends State<MyLocationView>
                     "{id}/{z}/{x}/{y}@2x.png?access_token={accessToken}",
                 additionalOptions: {
                   'accessToken':
-                      'pk.eyJ1IjoiaG91c3NlbXRuIiwiYSI6ImNqc3hvOG82NTA0Ym00YnI1dW40M2hjMjAifQ.VlQl6uacopBKX__qg6cf3w',
+                      secrets.accessToken,
                   'id': 'mapbox.streets',
                 },
               ),
@@ -364,98 +369,103 @@ class MyLocationViewState extends State<MyLocationView>
       ),
 
       ///floatingActionButtons
-      floatingActionButton: new Column(
-        mainAxisSize: MainAxisSize.min,
-        children: new List.generate(icons.length, (int index) {
-          Widget child = new Container(
-            height: 70.0,
-            width: 56.0,
-            alignment: FractionalOffset.topCenter,
-            child: new ScaleTransition(
-              scale: new CurvedAnimation(
-                parent: _controller,
-                curve: new Interval(0.0, 1.0 - index / icons.length / 2.0,
-                    curve: Curves.easeOut),
-              ),
-              child: new FloatingActionButton(
-                heroTag: null,
-                backgroundColor: backgroundColor,
-                mini: false,
-                child: new Icon(icons[index],
-                    color: index != 1 ? foregroundColor : Colors.red),
-                onPressed: () {
-                  ///onPress LockCamera button
-                  if (index == 0) {
-                    /// if Camera not locked
-                    if (isMoving == false) {
-                      /// if position not null [LatLng]
-                      if (lat != null && long != null) {
-                        setState(() {
-                          ///change icon to lockedCamera
-                          icons[index] = Icons.gps_fixed;
-                          isMoving = true;
-                        });
-                        mapController.move(LatLng(lat, long), _inZoom);
-                        _showSnackBar("Camera Lock Enabled!");
-                      } else {
-                        _showSnackBar("Couldn't get your Position!");
+      floatingActionButton: Container(
+
+        child: new Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: new List.generate(icons.length, (int index) {
+            Widget child = new Container(
+
+              child: Padding(
+                padding: const EdgeInsets.only(bottom:4.0,right: 2.0),
+                child: new ScaleTransition(
+                  scale: new CurvedAnimation(
+                    parent: _controller,
+                    curve: new Interval(0.0, 1.0 - index / icons.length / 2.0,
+                        curve: Curves.easeOut),
+                  ),
+                  child: new FloatingActionButton(
+                    heroTag: null,
+                    backgroundColor: backgroundColor,
+                    mini: false,
+                    child: new Icon(icons[index],
+                        color: index != 1 ? foregroundColor : Colors.red),
+                    onPressed: () {
+                      ///onPress LockCamera button
+                      if (index == 0) {
+                        /// if Camera not locked
+                        if (isMoving == false) {
+                          /// if position not null [LatLng]
+                          if (lat != null && long != null) {
+                            setState(() {
+                              ///change icon to lockedCamera
+                              icons[index] = Icons.gps_fixed;
+                              isMoving = true;
+                            });
+                            mapController.move(LatLng(lat, long), _inZoom);
+                            _showSnackBar("Camera Lock Enabled!");
+                          } else {
+                            _showSnackBar("Couldn't get your Position!");
+                          }
+                        } else {
+                          setState(() {
+                            icons[index] = Icons.gps_not_fixed;
+                            isMoving = false;
+                          });
+
+                          _showSnackBar("Camera Lock Disabled!");
+                        }
+
+                        ///OnPress Favorite Button
+                      } else if (index == 1) {
+                        // Calling bottom sheet Widget
+                        showModalBottomSheetApp(
+                            context: context,
+                            builder: (builder) {
+                              return buildSheetLogin(context);
+                            });
                       }
-                    } else {
-                      setState(() {
-                        icons[index] = Icons.gps_not_fixed;
-                        isMoving = false;
-                      });
 
-                      _showSnackBar("Camera Lock Disabled!");
-                    }
+                      ///OnPress CopyPosition button
+                      else if (index == 2) {
+                        ///Copy Current Position
+                        Clipboard.setData(new ClipboardData(text: "$lat,$long"));
 
-                    ///OnPress Favorite Button
-                  } else if (index == 1) {
-                    // Calling bottom sheet Widget
-                    showModalBottomSheetApp(
-                        context: context,
-                        builder: (builder) {
-                          return buildSheetLogin(context);
-                        });
-                  }
-
-                  ///OnPress CopyPosition button
-                  else if (index == 2) {
-                    ///Copy Current Position
-                    Clipboard.setData(new ClipboardData(text: "$lat,$long"));
-
-                    _showSnackBar("Location Copied!");
+                        _showSnackBar("Location Copied!");
+                      }
+                    },
+                  ),
+                ),
+              ),
+            );
+            return child;
+          }).toList()
+            ..add(
+              new FloatingActionButton(
+                heroTag: null,
+                child: new AnimatedBuilder(
+                  animation: _controller,
+                  builder: (BuildContext context, Widget child) {
+                    return new Transform(
+                      transform: new Matrix4.rotationZ(
+                          _controller.value * 0.5 * math.pi),
+                      alignment: FractionalOffset.center,
+                      child: new Icon(
+                          _controller.isDismissed ? Icons.add : Icons.close),
+                    );
+                  },
+                ),
+                onPressed: () {
+                  if (_controller.isDismissed) {
+                    _controller.forward();
+                  } else {
+                    _controller.reverse();
                   }
                 },
               ),
             ),
-          );
-          return child;
-        }).toList()
-          ..add(
-            new FloatingActionButton(
-              heroTag: null,
-              child: new AnimatedBuilder(
-                animation: _controller,
-                builder: (BuildContext context, Widget child) {
-                  return new Transform(
-                    transform: new Matrix4.rotationZ(
-                        _controller.value * 0.5 * math.pi),
-                    alignment: FractionalOffset.center,
-                    child: new Icon(
-                        _controller.isDismissed ? Icons.add : Icons.close),
-                  );
-                },
-              ),
-              onPressed: () {
-                if (_controller.isDismissed) {
-                  _controller.forward();
-                } else {
-                  _controller.reverse();
-                }
-              },
-            ),
-          ),
+        ),
       ),
     );
   }
